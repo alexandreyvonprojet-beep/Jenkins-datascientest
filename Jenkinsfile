@@ -29,4 +29,40 @@ pipeline {
                }
           }
       }
+        stage ('User Acceptance') {
+            steps{
+                input {
+                    message "Proceed to push to main"
+                    ok "Yes"
+                } 
+            }
+        }
+        stage ('Pushing and Merging') {
+            parallel {
+                stage ('Pushing') {
+                    environment {
+                        DOCKERHUB_CREDENTIALS = credentials("docker_jenkins")
+                    }
+                    steps {
+                        sh"""
+                        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                        docker push $DOCKER_ID/$DOCKER_IMAGE:$DOCKER_TAG
+                        """
+                    }
+                }
+                stage ('Merging') {
+                    steps {
+                        echo "Merging done"
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+          sh "docker logout"
+        }
+    }
+    
 }
